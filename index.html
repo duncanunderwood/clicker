@@ -4,18 +4,326 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clicker</title>
+<meta name="description" content="Advance slides from any phone or browser with a simple remote clicker built for live presentations. A MyEvent Labs product.">
 <link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; }
-  iframe { display: block; width: 100%; height: 100%; border: 0; }
+  /* MyEvent Labs brand tokens, taken from the live site stylesheet so this page
+     matches the product family. */
+  :root {
+    --ink: #101d2b;
+    --chalk: #f4f1ea;
+    --vermilion: #e4573d;
+    --oxide: #a63120;
+    --metal: #aab8c2;
+    --muted: #53606a;
+    --line: #d4d5cf;
+    --surface: #e8e8e1;
+    --section-border: #adb4b3;
+    --page-background: var(--chalk);
+    --page-text: var(--ink);
+    --text-accent: var(--oxide);
+    --font-sans: "Manrope", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+  body {
+    background: var(--page-background);
+    color: var(--page-text);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .container { width: min(1320px, 100% - 112px); margin-inline: auto; }
+
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 3px solid var(--vermilion);
+    outline-offset: 3px;
+  }
+
+  .visually-hidden {
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    position: absolute;
+    overflow: hidden;
+  }
+
+  /* The clicker keeps the whole first screen; the footer is one scroll below. */
+  .clicker-frame { height: 100vh; height: 100dvh; }
+  .clicker-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: #fff; }
+
+  .skip-link {
+    position: absolute;
+    left: 12px;
+    top: -100px;
+    z-index: 2;
+    background: var(--ink);
+    color: var(--chalk);
+    padding: 12px 18px;
+    border-radius: 4px;
+    font-size: .9rem;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 12px; }
+
+  .mono, .eyebrow {
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    letter-spacing: .09em;
+    line-height: 1.6;
+  }
+
+  .product-section { border-top: 1px solid var(--line); padding-block: 60px; }
+  .product-section > .section-label { padding-bottom: 40px; }
+  .section-label { color: var(--muted); text-transform: uppercase; margin: 0; }
+
+  .share-summary {
+    max-width: 62ch;
+    color: var(--muted);
+    margin: 10px 0 18px;
+    font-size: .95rem;
+    line-height: 1.55;
+  }
+
+  .share-buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+  .share-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 12px 20px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--page-text);
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .share-button:hover { border-color: var(--text-accent); }
+  .share-button svg { flex: none; color: var(--muted); }
+  .share-button[data-network="whatsapp"] svg { color: #25d366; }
+  .share-button[data-network="facebook"] svg { color: #1877f2; }
+
+  .share-tags {
+    color: var(--muted);
+    margin-top: 14px;
+    font-size: .85rem;
+    letter-spacing: .01em;
+  }
+
+  .copy-fallback {
+    margin-top: 14px;
+    width: min(420px, 100%);
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--section-border);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--page-text);
+    font-family: var(--font-mono);
+    font-size: .8rem;
+  }
+
+  .site-footer {
+    background: var(--ink);
+    color: var(--chalk);
+    padding-block: 48px 26px;
+  }
+  .site-footer a { color: inherit; }
+
+  .footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: start;
+    gap: 40px;
+    padding-bottom: 34px;
+  }
+  .footer-brand { display: grid; gap: 22px; max-width: 420px; }
+  .footer-brand .logo { display: inline-flex; align-items: center; }
+  .footer-brand .logo svg { width: 220px; }
+
+  .social-links { display: flex; flex-wrap: wrap; gap: 10px; }
+  .social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #fff5;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+  .social-links a:hover, .social-links a:focus-visible {
+    color: var(--vermilion);
+    background: #ffffff0d;
+    border-color: currentColor;
+  }
+
+  .footer-parent { color: var(--metal); margin: 0; font-size: .9rem; line-height: 1.55; }
+  .footer-tagline { color: var(--metal); margin: 0; }
+
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 30px;
+    padding: 12px 0;
+    border-bottom: 1px solid #fff6;
+    font-size: .95rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .text-link:hover { border-color: #fff; }
+
+  .footer-statement { max-width: 320px; margin: 0; font-size: 1.05rem; line-height: 1.5; }
+
+  .contact-details { font-style: normal; font-size: .95rem; }
+  .contact-details dl { display: grid; gap: 18px; margin: 0; }
+  .contact-details dt { color: var(--metal); margin-bottom: 4px; font-size: .78rem; }
+  .contact-details dd { margin: 0; }
+  .contact-details a { text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+
+  /* Full-width row, so the credit is centred on the container rather than
+     between unequal side columns. */
+  .footer-credit {
+    text-align: center;
+    color: var(--metal);
+    font-size: .8rem;
+    padding: 22px 0 18px;
+    margin: 0;
+  }
+  .footer-credit a { text-decoration: underline; text-underline-offset: 4px; }
+  .footer-credit a:hover, .footer-credit a:focus-visible { color: var(--vermilion); }
+
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    border-top: 1px solid #ffffff26;
+    padding-top: 20px;
+    color: var(--metal);
+    font-size: .72rem;
+  }
+  .footer-bottom p { margin: 0; }
+  .footer-bottom nav { display: flex; flex-wrap: wrap; gap: 16px; }
+  .footer-bottom nav a { text-decoration: none; }
+  .footer-bottom nav a:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+
+  @media (max-width: 900px) {
+    .container { width: calc(100% - 64px); }
+    .footer-top { flex-direction: column; gap: 28px; }
+    .product-section { padding-block: 40px; }
+    .product-section > .section-label { padding-bottom: 24px; }
+  }
+
+  @media (max-width: 560px) {
+    .container { width: calc(100% - 40px); }
+    .footer-brand .logo svg { width: 180px; }
+    .share-button { padding: 12px 16px; font-size: .88rem; }
+    .footer-bottom { gap: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
 </style>
 </head>
 <body>
-<iframe
-  src="https://www.internetclicker.com?code=jka&branding=false&sn=1"
-  title="Clicker"
-  allow="camera; microphone; fullscreen; autoplay"
-  referrerpolicy="no-referrer">
-</iframe>
+
+<a class="skip-link" href="#share">Skip to share and MyEvent Labs links</a>
+
+<main class="clicker-frame">
+  <iframe
+    src="https://www.internetclicker.com?code=jka&branding=false&sn=1"
+    title="Clicker"
+    allow="camera; microphone; fullscreen; autoplay"
+    referrerpolicy="no-referrer">
+  </iframe>
+</main>
+
+<section class="container product-section share-product" id="share" aria-labelledby="share-heading">
+  <p class="section-label" id="share-heading">SHARE THIS PRODUCT</p>
+  <nav aria-label="Share this product">
+    <p class="share-summary" id="share-summary"></p>
+    <div class="share-buttons" id="share-buttons"></div>
+    <p class="share-tags" id="share-tags"></p>
+    <input class="copy-fallback" id="copy-fallback" type="text" readonly hidden aria-label="Link to copy">
+    <p class="visually-hidden" id="share-status" role="status" aria-live="polite"></p>
+  </nav>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="logo" href="https://www.myevent-labs.io" target="_blank" rel="noopener noreferrer" aria-label="MyEvent Labs website (opens in a new tab)">
+          <svg viewBox="0 0 1460 230" aria-hidden="true" width="260" height="41"><g transform="translate(0 5)"><path fill="currentColor" d="M5 210Q0 210 2 205L64 6Q66 0 73 0H126L163 58L239 0L220 64L140 127L105 72L59 205Q58 210 52 210Z"></path><path fill="#E4573D" d="M140 127L220 64L175 210H120Q113 210 115 203Z"></path><path fill="#AAB8C2" d="M239 0H298Q304 0 302 6L254 156H364Q371 156 369 162L355 205Q354 210 348 210H175Z"></path></g><g fill="currentColor" fill-rule="evenodd" transform="translate(470 25)"><path d="M8 6L26 6L26 7L28 7L28 9L31 11L31 13L35 16L35 18L36 18L36 19L38 20L38 22L42 25L42 27L46 30L46 32L49 34L49 36L52 38L52 40L56 43L56 45L60 48L60 50L63 52L63 54L64 54L65 56L67 56L67 55L69 54L69 52L72 50L72 48L75 46L75 44L79 41L79 39L83 36L83 34L84 34L84 33L86 32L86 30L90 27L90 25L91 25L91 24L93 23L93 21L97 18L97 16L101 13L101 11L104 9L104 7L106 7L106 6L123 6L123 7L124 7L124 101L105 101L105 63L105 37L104 37L104 38L100 41L100 43L96 46L96 48L92 51L92 53L88 56L88 58L85 60L85 62L81 65L81 67L77 70L77 72L73 75L73 77L72 77L70 80L61 80L60 77L57 75L57 73L56 73L56 72L53 70L53 68L50 66L50 64L46 61L46 59L42 56L42 54L41 54L41 53L38 51L38 49L35 47L35 45L34 45L34 44L31 42L31 40L27 37L27 101L8 101ZM247 6L311 6L311 22L251 22L251 23L248 24L248 27L247 27L247 45L303 45L303 61L247 61L247 63L247 81L248 81L248 83L249 83L251 86L311 86L311 101L244 101L244 100L239 99L238 97L236 97L236 96L233 94L233 92L232 92L232 90L231 90L231 88L230 88L230 83L229 83L229 26L230 26L230 20L231 20L233 14L234 14L238 9L243 8L243 7L247 7ZM664 6L682 6L682 84L683 84L683 85L742 85L742 101L664 101ZM572 7L588 7L588 8L589 8L589 9L588 9L588 11L589 11L589 14L588 14L588 36L612 36L612 51L610 51L610 50L589 50L589 51L588 51L588 81L589 81L589 84L590 84L591 86L606 86L606 87L610 87L610 86L612 87L612 101L585 101L585 100L582 100L582 99L578 98L578 97L575 95L574 91L573 91L573 88L572 88L572 51L571 51L571 50L562 50L562 36L572 36ZM835 7L852 7L852 38L857 37L857 36L886 36L886 37L891 37L891 38L895 39L895 40L900 44L900 46L901 46L901 48L902 48L902 53L903 53L903 55L902 55L902 65L903 65L902 81L903 81L903 84L902 84L901 92L899 93L898 96L897 96L896 98L892 99L892 100L889 100L889 101L855 101L855 100L852 98L852 101L851 101L851 102L835 102ZM140 36L156 36L156 82L157 82L157 84L158 84L159 86L190 86L190 85L192 84L192 36L209 36L209 112L208 112L208 115L207 115L206 119L205 119L204 122L201 123L200 125L198 125L198 126L196 126L196 127L191 127L191 128L150 128L150 113L188 113L188 112L190 112L191 109L192 109L192 100L190 100L190 101L153 101L153 100L150 100L150 99L148 99L147 97L144 96L144 94L142 93L142 91L141 91L141 89L140 89L140 84L139 84L139 37L140 37ZM315 36L333 36L333 37L334 37L335 43L336 43L336 45L337 45L337 47L338 47L338 50L339 50L339 52L340 52L340 54L341 54L341 57L342 57L342 59L343 59L343 62L344 62L344 64L345 64L345 66L346 66L346 69L347 69L347 71L348 71L348 73L349 73L349 76L350 76L350 78L351 78L351 81L352 81L353 85L356 85L357 82L358 82L358 80L359 80L359 77L360 77L360 75L361 75L361 73L362 73L362 70L363 70L363 68L364 68L364 66L365 66L365 63L366 63L367 58L368 58L368 56L369 56L369 54L370 54L370 51L371 51L371 49L372 49L372 47L373 47L373 44L374 44L374 42L375 42L376 37L377 37L377 36L394 36L394 39L393 39L393 41L392 41L392 43L391 43L390 48L389 48L389 51L388 51L388 53L387 53L387 55L386 55L386 57L385 57L385 60L384 60L384 62L383 62L383 64L382 64L382 66L381 66L381 69L380 69L380 71L379 71L379 74L378 74L378 76L377 76L377 78L376 78L376 81L375 81L375 83L374 83L374 85L373 85L373 88L372 88L372 90L371 90L371 92L370 92L370 94L369 94L369 97L368 97L367 101L342 101L342 98L341 98L341 96L340 96L340 94L339 94L339 91L338 91L338 89L337 89L337 87L336 87L336 84L335 84L335 82L334 82L334 80L333 80L333 77L332 77L332 75L331 75L331 72L330 72L330 70L329 70L329 68L328 68L328 66L327 66L327 63L326 63L326 61L325 61L325 59L324 59L324 56L323 56L323 54L322 54L322 51L321 51L321 49L320 49L320 47L319 47L319 45L318 45L318 42L317 42ZM418 36L469 36L469 50L421 50L421 51L419 51L418 54L417 54L417 62L468 62L468 63L469 63L469 75L426 75L417 75L417 84L418 84L420 87L422 87L422 88L469 88L469 101L414 101L414 100L411 100L411 99L409 99L408 97L405 96L405 94L403 93L402 88L401 88L401 49L402 49L404 43L405 43L408 39L413 38L413 37L418 37ZM497 36L538 36L538 37L543 38L543 39L549 44L550 49L551 49L551 101L535 101L535 55L534 55L534 53L533 53L532 51L528 51L528 50L505 50L505 51L502 51L502 52L499 54L499 101L482 101L482 51L483 51L483 47L484 47L484 45L486 44L486 42L487 42L488 40L490 40L491 38L493 38L493 37L497 37ZM756 36L804 36L804 37L809 37L809 38L814 39L814 40L819 44L820 49L821 49L821 90L820 90L820 93L817 95L816 98L814 98L814 99L812 99L812 100L810 100L810 101L767 101L762 100L762 99L760 99L759 97L757 97L757 95L755 94L755 92L754 92L754 90L753 90L753 74L754 74L755 69L756 69L759 65L761 65L761 64L763 64L763 63L768 63L768 62L805 62L805 53L804 53L803 51L801 51L801 50L756 50L756 49L755 49L755 40L756 40L755 37L756 37ZM932 36L979 36L979 50L935 50L935 51L933 51L933 52L931 53L931 55L930 55L931 60L934 61L934 62L966 62L966 63L970 63L970 64L972 64L972 65L974 65L974 66L976 66L976 67L978 68L978 70L979 70L980 73L981 73L981 78L982 78L981 90L980 90L979 94L978 94L974 99L969 100L969 101L962 101L917 101L917 102L915 101L915 88L962 88L962 87L964 87L965 84L966 84L966 79L965 79L963 76L961 76L961 75L927 75L927 74L921 72L921 71L917 68L916 63L915 63L915 49L916 49L918 43L919 43L921 40L923 40L923 39L925 39L925 38L928 38L928 37L932 37ZM853 51L852 51L852 87L881 87L881 86L884 86L884 85L886 84L886 54L885 54L883 51ZM772 75L771 75L771 76L769 77L769 79L768 79L768 84L769 84L769 86L770 86L771 88L801 88L805 86L805 75Z"></path><path transform="translate(0 149)" d="M9 6L26 6L26 7L30 8L30 9L33 11L33 15L34 15L33 22L32 22L29 26L25 27L15 27L15 28L14 28L14 36L9 36ZM65 6L82 6L82 7L85 7L85 8L87 8L87 9L89 10L89 12L90 12L90 21L89 21L89 23L88 23L87 25L84 26L84 27L86 28L86 30L88 31L88 33L90 34L90 36L87 36L84 36L84 35L83 35L83 33L81 32L81 30L80 30L79 27L71 27L71 36L65 36ZM124 6L146 6L146 11L129 11L129 19L144 19L144 23L130 23L130 24L129 24L129 31L130 31L130 32L147 32L147 36L124 36ZM188 6L198 6L198 7L201 7L201 8L203 8L203 9L205 10L205 12L204 12L203 14L201 14L201 13L198 12L198 11L189 11L189 12L187 12L187 13L184 15L184 18L183 18L183 24L184 24L184 27L185 27L187 30L191 31L191 32L196 32L196 31L198 31L198 30L200 30L201 28L203 28L203 29L205 30L205 32L204 32L203 34L199 35L199 36L191 37L191 36L187 36L187 35L183 34L183 33L180 31L179 27L178 27L178 24L177 24L178 15L179 15L179 13L181 12L182 9L184 9L184 8L186 8L186 7L188 7ZM238 6L243 6L243 36L238 36ZM283 6L294 6L294 7L299 8L299 10L298 10L297 13L295 13L295 12L293 12L293 11L289 11L289 10L286 10L286 11L283 12L283 16L284 16L284 17L289 18L289 19L293 19L293 20L297 21L298 24L299 24L299 31L298 31L298 33L297 33L296 35L294 35L294 36L290 36L290 37L289 37L281 36L281 35L279 35L279 34L277 34L277 33L275 32L277 28L279 28L280 30L285 31L285 32L291 32L291 31L294 29L294 27L293 27L291 24L287 24L287 23L281 22L281 21L278 20L278 18L277 18L277 10L278 10L280 7L283 7ZM332 6L337 6L337 11L338 11L338 17L337 17L337 18L338 18L338 19L337 19L337 29L338 29L338 34L337 34L338 36L332 36ZM380 6L391 6L391 7L395 8L395 9L400 13L400 16L401 16L401 27L400 27L399 31L398 31L396 34L394 34L394 35L392 35L392 36L389 36L388 36L388 37L379 36L379 35L375 34L375 33L373 32L373 30L371 29L371 27L370 27L370 22L369 22L369 21L370 21L370 15L371 15L371 13L372 13L376 8L378 8L378 7L380 7ZM433 6L439 6L440 9L441 9L441 10L444 12L444 14L447 16L447 18L449 19L449 21L453 24L453 26L455 26L455 6L460 6L460 36L454 36L453 33L450 31L450 29L447 27L447 25L444 23L444 21L441 19L440 16L439 16L439 36L433 36ZM533 6L538 6L538 36L537 36L532 36L532 35L533 35ZM572 6L577 6L577 7L581 10L581 12L584 14L584 16L587 18L587 20L590 22L590 24L591 24L592 26L594 26L594 25L593 25L593 6L599 6L599 35L599 36L593 36L593 35L591 34L591 32L588 30L588 28L585 26L585 24L582 22L582 20L579 18L579 16L577 16L577 36L572 36ZM671 6L678 6L678 8L679 8L679 10L680 10L680 12L681 12L681 14L682 14L682 16L683 16L683 18L684 18L684 20L685 20L685 22L686 22L687 25L688 25L688 23L689 23L689 21L690 21L690 19L691 19L691 17L692 17L692 15L693 15L693 13L694 13L696 7L697 7L697 6L704 6L704 36L699 36L699 21L699 16L698 16L697 19L695 20L695 22L694 22L694 24L693 24L693 26L692 26L690 32L689 32L689 33L685 33L685 31L684 31L684 29L683 29L683 27L682 27L682 25L681 25L681 23L680 23L678 17L676 16L676 36L671 36L671 29L670 29L670 26L671 26L671 14L670 14L670 8L671 8ZM747 6L758 6L758 7L760 7L761 9L763 9L763 10L766 12L766 14L767 14L767 18L768 18L767 28L766 28L766 30L765 30L762 34L756 36L754 36L754 37L745 36L745 35L743 35L742 33L739 32L739 30L737 29L737 26L736 26L736 16L737 16L738 12L739 12L742 8L747 7ZM796 6L821 6L821 11L811 11L811 27L811 35L812 35L812 36L806 36L806 11L797 11L797 10L796 10ZM852 6L858 6L858 8L857 8L857 10L858 10L858 35L858 36L852 36ZM900 6L911 6L911 7L915 8L915 9L919 12L920 17L921 17L921 25L920 25L919 30L918 30L914 35L909 36L907 36L907 37L902 37L902 36L899 36L899 35L895 34L895 33L891 30L890 25L889 25L889 17L890 17L892 11L893 11L894 9L896 9L897 7L900 7ZM953 6L958 6L958 7L960 8L960 10L964 13L964 15L967 17L967 19L970 21L970 23L971 23L973 26L974 26L974 6L979 6L979 23L980 23L980 32L979 32L979 35L980 35L980 36L974 36L974 35L970 32L970 30L968 29L968 27L965 25L965 23L962 21L962 19L961 19L959 16L958 16L958 36L952 36L952 35L953 35ZM386 10L385 10L385 11L381 11L381 12L379 12L379 13L377 14L376 18L375 18L375 24L376 24L377 28L378 28L379 30L385 32L388 32L388 31L392 30L392 29L395 27L395 24L396 24L396 18L395 18L394 14L393 14L392 12L390 12L390 11L386 11ZM15 11L14 11L14 22L15 22L15 23L26 22L27 19L28 19L28 14L27 14L27 12L25 12L25 11ZM72 11L71 11L71 22L82 22L82 21L83 21L83 20L85 19L85 14L84 14L82 11ZM749 11L746 12L746 13L742 16L741 23L742 23L742 26L743 26L743 28L744 28L745 30L750 31L750 32L754 32L757 31L758 29L760 29L760 27L762 26L762 17L761 17L761 15L760 15L758 12L756 12L756 11ZM902 11L899 12L899 13L896 15L896 17L895 17L895 25L896 25L896 27L897 27L900 31L902 31L902 32L908 32L908 31L912 30L913 27L915 26L915 17L914 17L914 15L913 15L911 12L909 12L909 11Z"></path></g></svg>
+        </a>
+        <p class="footer-tagline mono">PRECISION IN MOTION</p>
+        <nav class="social-links" id="social-links" aria-label="MyEvent Labs social links"></nav>
+        <p class="footer-parent">MyEvent Labs is the digital systems and product division of MyEvent Productions.</p>
+        <a class="text-link" href="https://myevent.io" target="_blank" rel="noopener noreferrer">Visit MyEvent Productions <span aria-hidden="true">&#8599;</span></a>
+      </div>
+      <p class="footer-statement">Practical technology.<br>Considered from every angle.</p>
+      <address class="contact-details">
+        <dl>
+          <div>
+            <dt>Email</dt>
+            <dd><a href="mailto:hello@myevent-labs.io">hello@myevent-labs.io</a></dd>
+          </div>
+          <div>
+            <dt>Office phone</dt>
+            <dd><a href="tel:1300412431">1300 412 431</a></dd>
+          </div>
+          <div>
+            <dt>Mobile</dt>
+            <dd><a href="tel:+61487290222">0487 290 222</a></dd>
+          </div>
+          <div>
+            <dt>Office address</dt>
+            <dd>120 A&#39;Beckett Street<br>Melbourne VIC 3000</dd>
+          </div>
+        </dl>
+      </address>
+    </div>
+
+    <p class="footer-credit">
+      Developed by
+      <a href="https://myevent-labs.io" target="_blank" rel="noopener noreferrer">MyEvent Labs</a>
+    </p>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 MyEvent Labs</p>
+      <nav aria-label="Legal and feeds">
+        <a href="https://www.myevent-labs.io/feedback" target="_blank" rel="noopener noreferrer">Feedback</a>
+        <a href="https://www.myevent-labs.io/privacy" target="_blank" rel="noopener noreferrer">Privacy</a>
+        <a href="https://www.myevent-labs.io/terms" target="_blank" rel="noopener noreferrer">Terms</a>
+        <a href="https://www.myevent-labs.io/returns" target="_blank" rel="noopener noreferrer">Returns &amp; warranty</a>
+        <a href="https://www.myevent-labs.io/licensing" target="_blank" rel="noopener noreferrer">Licensing</a>
+        <a href="https://www.myevent-labs.io/rss.xml" target="_blank" rel="noopener noreferrer">RSS</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="./footer.js"></script>
 </body>
 </html>
